@@ -11,7 +11,7 @@
   "main": "./mydb",
   "dependencies": {
     "mysql": "2.0.0-alpha7",
-    "underscore": "1.4.4"
+    "lodash": "2.4.1"
   },
   "devDependencies": {},
   "optionalDependencies": {},
@@ -21,7 +21,7 @@
   "readme": "ERROR: No README data found!",
   "_id": "mydb@0.1.1",
   "dist": {
-    "shasum": "258f649c13c88c0a62d5a8a73dfbda8795165d7f"
+    "shasum": "5d86f53b7588cadda75e5a4e8450306937417149"
   },
   "_from": "../mydb"
 }

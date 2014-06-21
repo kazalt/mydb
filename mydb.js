@@ -1,84 +1,66 @@
-var dao = require("./lib/dao"),
-	_ = require("underscore"),
-	fs = require('fs'),
-	parent = require("./base");
+var dao = require("./lib/dao");
+var _ = require("underscore");
+var fs = require('fs');
+var Base = require("./base");
+var dataType = require("./lib/dataType");
 
-var mydb = function(database, username, password, options) {
-	this.options = _.extend({
-		dialect: 'mysql',
-		host: 'localhost',
-		port: 3306,
-		define: {},
-		logging: console.log
-	}, options || {})
+function mydb(database, username, password, options) {
+  this.options = _.extend({
+    database: database,
+    username: username,
+    password: password,
+    dialect: 'mysql',
+    host: 'localhost',
+    port: 3306,
+    define: {},
+    logging: console.log
+  }, options || {});
 
-	if (!_.isFunction(this.options.logging)) {
-		this.options.logging = function() {};
-	}
+  if (this.options.logging === true) {
+    this.options.logging = console.log;
+  }
 
-	this.config = {
-		database: database,
-		username: username,
-		password: (( (["", null, false].indexOf(password) > -1) || (typeof password == 'undefined')) ? null : password),
-		host    : this.options.host,
-		port    : this.options.port,
-		protocol: this.options.protocol
-	}
+  if (!_.isFunction(this.options.logging)) {
+    this.options.logging = function() {};
+  }
 
-	this.tables = {};
+  this.tables = {};
 
-	var connector = require("./lib/dialect/" + this.options.dialect);
-	this.connector = new connector(this.config);
-};
+  var connector = require("./lib/dialect/" + this.options.dialect);
+  this.connector = new connector(this.options);
 
-require('util').inherits(mydb, parent);
+  this.Model = dao;
+  this.Model.mydb = this;
+}
 
-mydb.prototype.type_name = "mydb";
+_.extend(mydb, dataType);
 
-mydb.prototype.define = function(name, attributes, options) {
-	var options = _.extend({}, this.options.define, options || {});
-	return this.tables[name] = new dao(this.connector, name, attributes, options);
-};
+_.extend(mydb.prototype, Base, {
 
-mydb.prototype.sync = function(options) {
-	var options = options || {};
-	for (var key in this.tables) {
-		if (options.force) this.connector.drop_table(this.tables[key]);
-		this.connector.create_table(this.tables[key]);
-	}
-};
+  define: function(name, options) {
+    if (!options) options = {};
 
-mydb.prototype.close = function() {
-	this.connector.close();
-};
+    options.validation = _.extend({}, this.options.validation, options.validation);
+    options.validationErrors = _.extend({}, this.options.validationErrors, options.validationErrors);
+    options = _.extend({}, this.options.define, options);
+    options.mydb = this;
 
-mydb.prototype.execute_query = function(query, options) {
-	this.connector.execute_query(query, options);
-};
+    var model = options.model || this.model || dao;
+    delete options.model;
 
-mydb.prototype.seed = function(type) {
-	type || (type = "harvest");
-	var mthis = this;
-	if (type === "harvest") {
-		_.each(this.tables, function(table) {
-			table.select().execute({
-				type: "raw",
-				done: function(res) {
-					var seed_data = JSON.stringify(res, null, 4);
-					var seed_content = "module.exports = " + seed_data + ";";
-					fs.writeFileSync(mthis.options.paths.seed + '/' + table.table_name + ".js", seed_content);
-				}
-			});
-		});
-	} else {
-		_.each(this.tables, function(table) {
-			var seed_name = mthis.options.paths.seed + "/" + table.table_name + ".js";
-			var seed_data = require(seed_name);
-			if (_.size(seed_data)) {
-				table.insert(seed_data).execute();
-			}
-		});
-	}
-};
+    this.tables[name] = model.extend(options);
+
+    return this.tables[name];
+  },
+
+  close: function() {
+    this.connector.close();
+  },
+
+  executeQuery: function(query, options) {
+    this.connector.executeQuery(query, options);
+  }
+
+});
 
 module.exports = mydb;
