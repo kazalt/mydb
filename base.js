@@ -1,26 +1,11 @@
 var _ = require("lodash");
 
-Base = function() {
+function Base() {
 
 }
 
 Base.prototype.custom = function(val) {
   return {uncheck: true, value: val};
-};
-
-Base.prototype.cloning = function() {
-  var clone = null;
-  if (!this.cloned) {
-    clone = _.clone(this);
-    clone.cloned = true;
-    clone.queryOptions = {
-      data: []
-    };
-  } else {
-    clone = this;
-    clone.queryOptions = _.clone(this.queryOptions);
-  }
-  return clone;
 };
 
 Base.prototype.as = function(value) {

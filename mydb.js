@@ -1,5 +1,5 @@
 var dao = require("./lib/dao");
-var _ = require("underscore");
+var _ = require("lodash");
 var fs = require('fs');
 var Base = require("./base");
 var dataType = require("./lib/dataType");
