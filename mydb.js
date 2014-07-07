@@ -1,8 +1,9 @@
-var dao = require("./lib/dao");
+var TableModel = require("./lib/TableModel");
 var _ = require("lodash");
 var fs = require('fs');
 var Base = require("./base");
 var dataType = require("./lib/dataType");
+var functionModel = require("./lib/functionModel");
 
 function mydb(database, username, password, options) {
   this.options = _.extend({
@@ -29,7 +30,7 @@ function mydb(database, username, password, options) {
   var connector = require("./lib/dialect/" + this.options.dialect);
   this.connector = new connector(this.options);
 
-  this.Model = dao;
+  this.Model = TableModel;
   this.Model.mydb = this;
 }
 
@@ -45,7 +46,7 @@ _.extend(mydb.prototype, Base, {
     options = _.extend({}, this.options.define, options);
     options.mydb = this;
 
-    var model = options.model || this.model || dao;
+    var model = options.model || this.model || TableModel;
     delete options.model;
 
     this.tables[name] = model.extend(options);
@@ -59,6 +60,30 @@ _.extend(mydb.prototype, Base, {
 
   executeQuery: function(query, options) {
     this.connector.executeQuery(query, options);
+  },
+
+  max: function(val) {
+    return new functionModel({type: "max", value: val});
+  },
+
+  min: function(val) {
+    return new functionModel({type: "min", value: val});
+  },
+
+  count: function(val) {
+    return new functionModel({type: "count", value: val});
+  },
+
+  sum: function(val) {
+    return new functionModel({type: "sum", value: val});
+  },
+
+  concat: function() {
+    var data = _.values(arguments);
+    if (data.length == 1 && _.isArray(data[0])) {
+      data = data[0];
+    }
+    return new functionModel({type: "concat", value: data});
   }
 
 });
